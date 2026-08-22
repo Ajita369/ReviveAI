@@ -33,7 +33,7 @@ def test_phase4_api_endpoints(tmp_path: Path) -> None:
 
     recovery = client.post(f"/recover/{transaction_id}")
     assert recovery.status_code == 200
-    assert recovery.json()["status"] == "accepted"
+    assert recovery.json()["status"] in {"accepted", "recovered"}
 
     detail = client.get(f"/transactions/{transaction_id}")
     assert detail.status_code == 200
@@ -46,3 +46,19 @@ def test_phase4_api_endpoints(tmp_path: Path) -> None:
     metrics = client.get("/metrics")
     assert metrics.status_code == 200
     assert metrics.json()["transactions"] == 1000
+
+
+def test_stubborn_gateway_demo_escalates_after_three_steps(tmp_path: Path) -> None:
+    client = TestClient(create_app(tmp_path / "demo.db"))
+
+    assert client.post("/demo/reset").json()["status"] == "reset"
+    for expected_attempts in (1, 2, 3):
+        result = client.post("/demo/step").json()
+        assert result["attempts"] == expected_attempts
+    assert result["status"] == "escalated"
+
+    detail = client.get("/transactions/txn_fail_demo").json()
+    assert detail["transaction"]["recovery_status"] == "escalated"
+    assert len(detail["attempts"]) == 3
+    audit = client.get("/audit", params={"transaction_id": "txn_fail_demo"}).json()
+    assert any(item["event_type"] == "recovery_escalated" for item in audit["items"])

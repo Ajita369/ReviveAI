@@ -23,6 +23,8 @@ def api_post(path: str, payload: dict | None = None) -> dict:
 def main() -> None:
     st.set_page_config(page_title="ReviveAI Operations Console", layout="wide")
     st.title("ReviveAI Operations Console")
+    if st.button("Refresh dashboard"):
+        st.rerun()
     try:
         metrics = api_get("/metrics")
     except requests.RequestException as exc:
