@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 
@@ -26,7 +26,9 @@ class ScoringEngine:
                 return 0.0
         if not isinstance(created_at, datetime):
             return 0.0
-        delta = datetime.utcnow() - created_at
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        delta = datetime.now(timezone.utc) - created_at.astimezone(timezone.utc)
         return delta.total_seconds() / 3600.0
 
     def score(self, tx: Dict[str, Any], customer: Dict[str, Any]) -> Dict[str, Any]:

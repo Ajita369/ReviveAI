@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict
 
 
@@ -11,7 +11,7 @@ class PolicyEngine:
     PERMANENT_FAILURES = {"fraud_detected", "account_closed", "card_stolen"}
 
     def _now(self) -> datetime:
-        return datetime.utcnow()
+        return datetime.now(timezone.utc)
 
     def _check_cooldown(self, last_recovery_at: Any) -> bool:
         if not last_recovery_at:
@@ -24,6 +24,8 @@ class PolicyEngine:
                 return False
         if not isinstance(last_recovery_at, datetime):
             return False
+        if last_recovery_at.tzinfo is None:
+            last_recovery_at = last_recovery_at.replace(tzinfo=timezone.utc)
         elapsed = self._now() - last_recovery_at
         return elapsed >= timedelta(hours=self.MIN_COOLDOWN_HOURS)
 
