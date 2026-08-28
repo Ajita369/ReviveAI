@@ -26,7 +26,6 @@ media/
 *.swp
 *.swo
 
-data/
 __pycache__/
 implementation_plan.md
 .pytest_temp/
